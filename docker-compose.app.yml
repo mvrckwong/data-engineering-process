@@ -1,0 +1,14 @@
+version: '3.8'
+name: 'tmds-checkin-application'
+
+services:
+  app:
+    container_name: streamlit-app
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.app
+    restart: always
+    ports:
+     - "8501:8501"
+    volumes:
+     - .:/app

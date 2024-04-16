@@ -1,0 +1,88 @@
+version: '3.8'
+name: 'tmds-airflow'
+
+x-airflow-common:
+  &airflow-common
+  build:
+    context: ./docker
+    dockerfile: Dockerfile.airflow
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////${AIRFLOW_SQLITE_DB_DEST}
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: sqlite:////${AIRFLOW_SQLITE_DB_DEST}
+
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+  user: root
+  volumes:
+    - ${AIRFLOW_SQLITE_DB_SRC}:${AIRFLOW_SQLITE_DB_DEST}
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/data:/opt/airflow/data
+    - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/src
+    - ${AIRFLOW_PROJ_DIR:-.}/.env:/opt/airflow/.env
+    # - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    # - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+
+services:
+  airflow-init:
+    <<: *airflow-common
+    container_name: initialize
+    command: 
+      - "/bin/bash airflow db init"
+      - "/bin/bash airflow db upgrade"
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: ${_AIRFLOW_DB_MIGRATE}
+      _AIRFLOW_WWW_USER_CREATE: ${_AIRFLOW_WWW_USER_CREATE}
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD}
+      _PIP_ADDITIONAL_REQUIREMENTS: ''
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: webserver
+    command: webserver
+    ports:
+      - "${AIRFLOW_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    #restart: always
+
+  airflow-triggerer:
+    <<: *airflow-common
+    container_name: triggerer-tmds
+    command: ['triggerer']
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      airflow-webserver:
+        condition:
+          service_healthy
+
+  airflow-scheduler-users:
+    <<: *airflow-common
+    container_name: scheduler
+    command: ['scheduler']
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      airflow-webserver:
+        condition:
+          service_healthy

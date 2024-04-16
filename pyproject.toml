@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "tm-solutions-data-engineer"
+version = "0.1.0"
+description = ""
+authors = ["Maverick Wong <mvrck.wong@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+loguru = "^0.7.2"
+pandas = "^2.2.1"
+pyarrow = "^15.0.0"
+pydantic = "^2.6.3"
+python-dotenv = "^1.0.1"
+sqlalchemy = "2"
+# apache-airflow-providers-postgres = "^5.10.1"
+# sqlalchemy = "^1.4"
+# apache-airflow-providers-postgres = "^5.10.1"
+# psycopg2-binary = "^2.9.9"
+psycopg2 = "^2.9.9"
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

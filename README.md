@@ -1,6 +1,6 @@
 # Data Engineer Solutions
 <a name="readme-top"></a>
-This is the solution set for TMDS Data Engineering Exam. All outputs are within ".output" folder. The project implements the following:
+All outputs are within ".output" folder. The project implements the following:
 - End-to-End data processes. Similar to ETL data process.
 - Streamlit Application to visualize the user data.
 - Docker and Poetry to manage the project dependencies.
